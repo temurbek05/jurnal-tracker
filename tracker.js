@@ -19,6 +19,9 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const PORT = parseInt(process.env.PORT || '5555', 10);
 const SEND_HOUR = parseInt(process.env.SEND_HOUR || '21', 10);
+const SEND_NOW_MODE = process.argv.includes('--send-now');
+const DISABLE_LOCAL_CRON = process.env.DISABLE_LOCAL_CRON === 'true';
+const AUTO_PUSH = process.env.AUTO_PUSH !== 'false';
 
 const HTML_FILE = path.join(__dirname, 'index.html');
 const DATA_FILE = path.join(__dirname, 'roadmap-data.json');
@@ -51,6 +54,29 @@ function loadState() {
 
 function saveState(s) {
   fs.writeFileSync(STATE_FILE, JSON.stringify(s, null, 2));
+  if (AUTO_PUSH && !SEND_NOW_MODE) schedulePush();
+}
+
+// state.json ni GitHub repo'ga avtomatik push (debounced 5s)
+const { execSync } = require('child_process');
+let _pushTimer = null;
+function schedulePush() {
+  clearTimeout(_pushTimer);
+  _pushTimer = setTimeout(() => {
+    try {
+      execSync('git add state.json', { cwd: __dirname, stdio: 'pipe' });
+      const diff = execSync('git diff --cached --name-only', { cwd: __dirname }).toString().trim();
+      if (!diff) return;
+      execSync(
+        'git -c user.email=tracker@local -c user.name="JURNAL Tracker" commit -m "state: auto-update"',
+        { cwd: __dirname, stdio: 'pipe' }
+      );
+      execSync('git push -q', { cwd: __dirname, stdio: 'pipe' });
+      console.log('[git] state.json GitHub\'ga sinxronlandi');
+    } catch (e) {
+      // jim — internet yo'q yoki credential muammosi
+    }
+  }, 5000);
 }
 
 function dayDiff(fromStr) {
@@ -281,20 +307,39 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log('');
-  console.log('╔════════════════════════════════════════════════════╗');
-  console.log('║          JURNAL Roadmap Tracker                    ║');
-  console.log('╚════════════════════════════════════════════════════╝');
-  console.log('');
-  console.log('  📋 UI:           http://localhost:' + PORT);
-  console.log('  📧 Email vaqti:  har kuni soat ' + SEND_HOUR + ':00');
-  console.log('  📨 Email manzil: ' + (process.env.REPORT_TO || process.env.GMAIL_USER || '(.env to\'ldirilmagan)'));
-  console.log('');
-  console.log('  Yopish: Ctrl+C');
-  console.log('');
-});
+// --- CLI mode: --send-now (GitHub Actions ishlatadi) ----------------------
+if (SEND_NOW_MODE) {
+  (async () => {
+    try {
+      const ok = await sendDailyEmail();
+      process.exit(ok ? 0 : 1);
+    } catch (e) {
+      console.error('Email yuborishda xato:', e.message);
+      process.exit(2);
+    }
+  })();
+} else {
+  server.listen(PORT, () => {
+    console.log('');
+    console.log('╔════════════════════════════════════════════════════╗');
+    console.log('║          JURNAL Roadmap Tracker                    ║');
+    console.log('╚════════════════════════════════════════════════════╝');
+    console.log('');
+    console.log('  📋 UI:           http://localhost:' + PORT);
+    if (DISABLE_LOCAL_CRON) {
+      console.log('  📧 Email:        GitHub Actions orqali yuboriladi');
+    } else {
+      console.log('  📧 Email vaqti:  har kuni soat ' + SEND_HOUR + ':00');
+      console.log('  📨 Email manzil: ' + (process.env.REPORT_TO || process.env.GMAIL_USER || '(.env to\'ldirilmagan)'));
+    }
+    if (AUTO_PUSH) console.log('  🔄 Auto-sync:    state.json GitHub\'ga avtomatik push');
+    console.log('');
+    console.log('  Yopish: Ctrl+C');
+    console.log('');
+  });
 
-// Har 5 daqiqada email vaqtini tekshirish
-setInterval(tickScheduler, 5 * 60 * 1000);
-tickScheduler();
+  if (!DISABLE_LOCAL_CRON) {
+    setInterval(tickScheduler, 5 * 60 * 1000);
+    tickScheduler();
+  }
+}

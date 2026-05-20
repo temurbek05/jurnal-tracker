@@ -1,0 +1,32 @@
+name: Kunlik email hisobot
+
+# Har kuni soat 16:00 UTC = 21:00 Asia/Tashkent
+# Qo'lda ham ishga tushirish mumkin (workflow_dispatch)
+on:
+  schedule:
+    - cron: '0 16 * * *'
+  workflow_dispatch:
+
+jobs:
+  send-email:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repo'ni olish
+        uses: actions/checkout@v4
+
+      - name: Node.js o'rnatish
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Paketlarni o'rnatish
+        run: npm ci
+
+      - name: Kunlik email yuborish
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          REPORT_TO: ${{ secrets.REPORT_TO }}
+          TZ: Asia/Tashkent
+          AUTO_PUSH: 'false'
+        run: node tracker.js --send-now
