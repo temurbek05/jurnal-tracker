@@ -1,0 +1,251 @@
+[
+  {
+    "phase": "Faza 1 — Test va Xatolarni Tuzatish",
+    "icon": "🧪",
+    "days": [
+      {
+        "day": 1,
+        "title": "Auth flow to'liq test",
+        "tasks": [
+          "Ro'yxatdan o'tish — to'g'ri ma'lumot bilan (positive test)",
+          "Ro'yxatdan o'tish — xato holatlar (bo'sh forma, zaif parol, dublikat email)",
+          "Email tasdiqlash — MailHog orqali link tekshirish",
+          "Login va logout sinash",
+          "Parolni tiklash (forgot / reset) flow"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "Author: maqola yuborish testi",
+        "tasks": [
+          "Maqola yaratish — multi-step formaning har bir qadami",
+          "Fayl yuklash — PDF va DOCX, 50MB limit tekshiruvi",
+          "Mualliflar va kalit so'zlar qo'shish",
+          "Maqolani submit qilish (DRAFT → SUBMITTED)",
+          "\"Mening maqolalarim\" sahifasi va status ko'rinishi"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "Editor flow testi",
+        "tasks": [
+          "Editor dashboard ochilishi va maqolalar ro'yxati",
+          "Maqolani ko'rib chiqish (EDITOR_REVIEW)",
+          "Taqrizchilarni taklif qilish (2-3 ta)",
+          "Editor qarori — accept / reject / revision so'rash",
+          "Status tarixi (audit log) tekshiruvi"
+        ]
+      },
+      {
+        "day": 4,
+        "title": "Reviewer flow testi",
+        "tasks": [
+          "Taqriz taklifini qabul / rad qilish",
+          "Taqriz formasini to'ldirish va yuborish",
+          "Double-blind — muallif va taqrizchi anonimligi tekshiruvi",
+          "Deadline va eslatma ko'rinishi",
+          "Revision → resubmit aylanishi"
+        ]
+      },
+      {
+        "day": 5,
+        "title": "To'lov (APC) flow testi",
+        "tasks": [
+          "ACCEPTED maqola uchun to'lov so'rovi yaratilishi",
+          "Click sandbox orqali to'lov sinash",
+          "Payme sandbox orqali to'lov sinash",
+          "To'lovdan keyin status IN_PRODUCTION ga o'tishi",
+          "Admin \"To'lovlar\" sahifasida ko'rinishi"
+        ]
+      },
+      {
+        "day": 6,
+        "title": "Admin va public sahifalar testi",
+        "tasks": [
+          "Yo'nalishlar / Jurnallar / Sonlar CRUD",
+          "Tariflarni (APC narxlar) sozlash",
+          "Public maqolalar sahifasi va maqola ko'rish",
+          "Qidiruv (PostgreSQL FTS) sinash",
+          "Tilni almashtirish (uz ↔ ru)"
+        ]
+      },
+      {
+        "day": 7,
+        "title": "Xatolarni tuzatish kuni",
+        "tasks": [
+          "1-6 kunlarda topilgan barcha buglar ro'yxatini ko'rib chiqish",
+          "Kritik (bloker) buglarni tuzatish",
+          "Responsive — telefon va planshet ko'rinishi tekshiruvi",
+          "Brauzer console xatolarini tozalash",
+          "Barcha asosiy flow'larni qayta tezkor test"
+        ]
+      }
+    ]
+  },
+  {
+    "phase": "Faza 2 — Production Tayyorgarligi",
+    "icon": "⚙️",
+    "days": [
+      {
+        "day": 8,
+        "title": "Production environment",
+        "tasks": [
+          "Production .env fayli tayyorlash",
+          "Barcha secret'larni xavfsiz generatsiya (JWT, DB parol)",
+          "NODE_ENV va log darajalarini sozlash",
+          ".env.example faylini yangilash",
+          "Production build sinash (pnpm build)"
+        ]
+      },
+      {
+        "day": 9,
+        "title": "Email production sozlash",
+        "tasks": [
+          "Real email provayderi tanlash (Mailgun / SendGrid / SMTP)",
+          "Domen email autentifikatsiyasi (SPF, DKIM)",
+          "Email shablonlarini ko'rib chiqish",
+          "Test email — spam papkaga tushmasligini tekshirish",
+          "BullMQ queue'ni production'ga sozlash"
+        ]
+      },
+      {
+        "day": 10,
+        "title": "Hosting tanlash va sozlash",
+        "tasks": [
+          "Frontend hosting (Vercel) — account va loyiha",
+          "Backend hosting (Railway / Fly.io) — account",
+          "Managed PostgreSQL provayderi",
+          "Managed Redis provayderi",
+          "Production fayl ombori (S3 / MinIO bucket)"
+        ]
+      },
+      {
+        "day": 11,
+        "title": "To'lov provayderlari (production)",
+        "tasks": [
+          "Click merchant ro'yxatdan o'tishni boshlash",
+          "Payme merchant ro'yxatdan o'tishni boshlash",
+          "Production kalitlarini olish / kutish",
+          "Webhook URL'larini sozlash",
+          "Sandbox → production rejimiga o'tkazish"
+        ]
+      },
+      {
+        "day": 12,
+        "title": "Domen va xavfsizlik",
+        "tasks": [
+          "Domen sotib olish (.uz yoki .com)",
+          "DNS yozuvlarini sozlash",
+          "SSL sertifikat (HTTPS) o'rnatish",
+          "CORS, helmet, rate limiting yoqish",
+          "Xavfsizlik header'larini tekshirish"
+        ]
+      },
+      {
+        "day": 13,
+        "title": "Kontent va statik sahifalar",
+        "tasks": [
+          "22 yo'nalishni real nomlar bilan to'ldirish",
+          "Boshlang'ich jurnallar va tahririyat kiritish",
+          "\"Biz haqimizda\" sahifasi",
+          "\"Aloqa\" sahifasi",
+          "\"Foydalanish shartlari\" va \"Maxfiylik siyosati\""
+        ]
+      },
+      {
+        "day": 14,
+        "title": "Birinchi production deploy",
+        "tasks": [
+          "Backend'ni production'ga deploy qilish",
+          "Frontend'ni production'ga deploy qilish",
+          "DB migration ishga tushirish",
+          "Seed — referans ma'lumotlar (rollar, yo'nalishlar, admin)",
+          "Smoke test — asosiy flow'lar production'da ishlaydimi"
+        ]
+      }
+    ]
+  },
+  {
+    "phase": "Faza 3 — Launch va Beta",
+    "icon": "🎯",
+    "days": [
+      {
+        "day": 15,
+        "title": "Production E2E test",
+        "tasks": [
+          "To'liq Author flow'ni production'da sinash",
+          "Real email yetib kelishini tekshirish",
+          "Real to'lov (kichik summa) sinash",
+          "Admin va Editor flow'lari production'da",
+          "Topilgan buglarni qayd qilish"
+        ]
+      },
+      {
+        "day": 16,
+        "title": "Monitoring va backup",
+        "tasks": [
+          "Error tracking (Sentry) ulash",
+          "Uptime monitoring sozlash",
+          "DB avtomatik backup (kunlik)",
+          "Loglarni yig'ish va ko'rish tizimi",
+          "Alert — xato bo'lganda xabar olish"
+        ]
+      },
+      {
+        "day": 17,
+        "title": "Performance optimizatsiya",
+        "tasks": [
+          "Lighthouse audit (har bir asosiy sahifa)",
+          "Rasmlarni optimizatsiya qilish",
+          "Sahifa yuklanish tezligini yaxshilash",
+          "DB indekslarni tekshirish",
+          "Keshlash (cache) sozlash"
+        ]
+      },
+      {
+        "day": 18,
+        "title": "Xavfsizlik auditi",
+        "tasks": [
+          "OWASP Top-10 asosiy tekshiruvlar",
+          "Auth va permission teshiklarini sinash",
+          "Fayl yuklash xavfsizligi (tur, hajm tekshiruvi)",
+          "XSS va SQL injection tekshiruvi",
+          "Barcha sirlar koddan tashqarida ekanini tasdiqlash"
+        ]
+      },
+      {
+        "day": 19,
+        "title": "Beta foydalanuvchilar",
+        "tasks": [
+          "3-5 ta haqiqiy foydalanuvchini taklif qilish",
+          "Onboarding / qo'llanma hujjati tayyorlash",
+          "Beta fikr-mulohaza formasi",
+          "Foydalanuvchilar harakatini kuzatish",
+          "Birinchi fikrlarni yig'ish"
+        ]
+      },
+      {
+        "day": 20,
+        "title": "Beta fikrlarni qayta ishlash",
+        "tasks": [
+          "Beta'dan kelgan buglarni tuzatish",
+          "UX va dizayn yaxshilashlari",
+          "Kontent va matn tuzatishlari",
+          "Tezkor qayta test",
+          "Yakuniy sayqallash"
+        ]
+      },
+      {
+        "day": 21,
+        "title": "Rasmiy launch 🚀",
+        "tasks": [
+          "Yakuniy launch checklist tekshiruvi",
+          "Barcha tizimlar ishlayotganini tasdiqlash",
+          "E'lon — ijtimoiy tarmoq va hamkasblar",
+          "LAUNCH — saytni ommaga ochish!",
+          "Birinchi kun monitoring va kuzatuv"
+        ]
+      }
+    ]
+  }
+]

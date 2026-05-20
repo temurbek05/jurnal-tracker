@@ -1,0 +1,13 @@
+{
+  "name": "jurnal-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "JURNAL roadmap tracker — kunlik email hisobot bilan",
+  "scripts": {
+    "start": "node tracker.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "nodemailer": "^6.9.16"
+  }
+}

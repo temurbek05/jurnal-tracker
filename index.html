@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JURNAL — Ishga Tushirish Yo'l Xaritasi</title>
+<style>
+  :root {
+    --bg: #0d0d14; --bg-2: #15151f; --card: #1b1b27; --card-2: #21212f;
+    --line: #2c2c3d; --txt: #e8e8f0; --txt-dim: #8a8aa0;
+    --accent: #7c6cf0; --accent-soft: #2a2550;
+    --green: #34d399; --green-soft: #18352c;
+    --amber: #f5b94a; --amber-soft: #3a2f15; --red: #f0686b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--txt);
+    font-family: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+    line-height: 1.5; padding: 24px 16px 80px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  header { margin-bottom: 28px; }
+  .title { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+  .subtitle { color: var(--txt-dim); font-size: 14px; margin-top: 4px; }
+  .overall {
+    margin-top: 18px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 16px; padding: 18px 20px;
+  }
+  .overall-row { display: flex; justify-content: space-between; align-items: baseline; }
+  .overall-pct { font-size: 32px; font-weight: 800; color: var(--accent); }
+  .overall-label { color: var(--txt-dim); font-size: 13px; }
+  .bar { height: 9px; background: var(--bg-2); border-radius: 99px; margin-top: 12px; overflow: hidden; }
+  .bar > div { height: 100%; background: linear-gradient(90deg, var(--accent), #a99cff); border-radius: 99px; transition: width .4s ease; }
+  .meta-row { display: flex; gap: 18px; margin-top: 12px; flex-wrap: wrap; }
+  .meta { font-size: 12px; color: var(--txt-dim); }
+  .meta b { color: var(--txt); font-size: 13px; }
+  .sec-title { font-size: 13px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--txt-dim); margin: 30px 0 12px; }
+  .today {
+    background: linear-gradient(150deg, var(--accent-soft), var(--card));
+    border: 1px solid var(--accent); border-radius: 18px; padding: 22px;
+  }
+  .today-head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+  .day-badge {
+    background: var(--accent); color: #fff; font-weight: 800; font-size: 14px;
+    padding: 4px 12px; border-radius: 99px;
+  }
+  .today-phase { color: var(--txt-dim); font-size: 13px; }
+  .today-title { font-size: 19px; font-weight: 700; margin: 8px 0 14px; }
+  .report {
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 16px;
+    font-size: 14px; display: flex; gap: 10px; align-items: flex-start;
+  }
+  .report.ok { background: var(--green-soft); border: 1px solid #2a5848; }
+  .report.warn { background: var(--amber-soft); border: 1px solid #5a4a20; }
+  .report .ic { font-size: 18px; }
+  .task {
+    display: flex; align-items: flex-start; gap: 11px; padding: 10px 12px;
+    border-radius: 11px; cursor: pointer; user-select: none; transition: background .15s;
+  }
+  .task:hover { background: rgba(255,255,255,0.04); }
+  .checkbox {
+    width: 21px; height: 21px; border-radius: 7px; border: 2px solid var(--line);
+    flex-shrink: 0; margin-top: 1px; display: flex; align-items: center;
+    justify-content: center; transition: all .15s;
+  }
+  .task.done .checkbox { background: var(--green); border-color: var(--green); }
+  .checkbox svg { opacity: 0; }
+  .task.done .checkbox svg { opacity: 1; }
+  .task-text { font-size: 14px; }
+  .task.done .task-text { color: var(--txt-dim); text-decoration: line-through; }
+  .overdue {
+    background: var(--card); border: 1px solid #4a2a2c; border-radius: 16px; padding: 16px 18px;
+  }
+  .overdue-head { color: var(--red); font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+  .overdue .task-text { font-size: 13px; }
+  .overdue .od-day { color: var(--txt-dim); font-size: 11px; margin-left: 4px; }
+  .phase { margin-bottom: 14px; }
+  .phase-head {
+    display: flex; align-items: center; gap: 10px; padding: 12px 4px;
+    font-weight: 700; font-size: 15px;
+  }
+  .phase-prog { margin-left: auto; font-size: 12px; color: var(--txt-dim); }
+  .day {
+    background: var(--card); border: 1px solid var(--line); border-radius: 13px;
+    margin-bottom: 8px; overflow: hidden;
+  }
+  .day-head {
+    display: flex; align-items: center; gap: 11px; padding: 13px 15px; cursor: pointer;
+  }
+  .day-head:hover { background: var(--card-2); }
+  .day-num {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--bg-2);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; flex-shrink: 0;
+  }
+  .day.is-today .day-num { background: var(--accent); color: #fff; }
+  .day.is-done .day-num { background: var(--green); color: #06281d; }
+  .day-name { font-size: 14px; font-weight: 600; }
+  .day-count {
+    margin-left: auto; font-size: 12px; color: var(--txt-dim);
+    background: var(--bg-2); padding: 3px 9px; border-radius: 99px;
+  }
+  .day-count.full { background: var(--green-soft); color: var(--green); }
+  .day-body { padding: 4px 8px 10px; border-top: 1px solid var(--line); display: none; }
+  .day.open .day-body { display: block; }
+  .chevron { color: var(--txt-dim); transition: transform .2s; font-size: 12px; }
+  .day.open .chevron { transform: rotate(90deg); }
+  footer {
+    margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .foot-info { font-size: 12px; color: var(--txt-dim); }
+  .btn {
+    background: var(--card-2); border: 1px solid var(--line); color: var(--txt-dim);
+    padding: 7px 14px; border-radius: 9px; font-size: 12px; cursor: pointer;
+    font-family: inherit; margin-left: 6px;
+  }
+  .btn:hover { color: var(--txt); border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: #6a5ce0; }
+  .done-celebrate {
+    text-align: center; padding: 30px; background: var(--green-soft);
+    border: 1px solid #2a5848; border-radius: 16px; font-size: 16px;
+  }
+  .save-status {
+    position: fixed; bottom: 20px; right: 20px;
+    background: var(--card); border: 1px solid var(--line); padding: 8px 14px;
+    border-radius: 99px; font-size: 12px; color: var(--txt-dim);
+    opacity: 0; transition: opacity .3s; pointer-events: none;
+  }
+  .save-status.show { opacity: 1; }
+  .save-status.error { color: var(--red); border-color: var(--red); }
+  .loading { text-align: center; padding: 80px; color: var(--txt-dim); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">🚀 JURNAL — Ishga Tushirish Yo'l Xaritasi</div>
+    <div class="subtitle">Ilmiy jurnal platformasini to'liq production'ga chiqarish · 21 kunlik reja</div>
+    <div class="overall">
+      <div class="overall-row">
+        <div><span class="overall-pct" id="pct">0%</span></div>
+        <div class="overall-label" id="pctLabel">yuklanmoqda...</div>
+      </div>
+      <div class="bar"><div id="overallBar" style="width:0%"></div></div>
+      <div class="meta-row">
+        <div class="meta">Bugun: <b id="mDay">—</b></div>
+        <div class="meta">Faza: <b id="mPhase">—</b></div>
+        <div class="meta">Ketma-ket: <b id="mStreak">0 kun</b></div>
+        <div class="meta">Boshlangan: <b id="mStart">—</b></div>
+      </div>
+    </div>
+  </header>
+  <div id="app"><div class="loading">Yuklanmoqda…</div></div>
+  <footer>
+    <div class="foot-info">
+      Holat <b>server</b>'da saqlanadi. Har kuni 21:00 da email keladi.
+    </div>
+    <div>
+      <button class="btn" id="sendNowBtn">Hozir email yuborish</button>
+      <button class="btn" id="resetBtn">Tozalash</button>
+    </div>
+  </footer>
+</div>
+<div id="saveStatus" class="save-status"></div>
+
+<script>
+let ROADMAP = null;
+let state = null;
+
+// ============ SERVER ALOQA ============
+async function apiGet(p) { return (await fetch(p)).json(); }
+async function apiPost(p, body) {
+  return (await fetch(p, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body || {})
+  })).json();
+}
+
+function showSaveStatus(text, isError) {
+  const el = document.getElementById('saveStatus');
+  el.textContent = text;
+  el.className = 'save-status show' + (isError ? ' error' : '');
+  clearTimeout(window._saveTimer);
+  window._saveTimer = setTimeout(() => { el.className = 'save-status'; }, 1500);
+}
+
+async function saveState() {
+  try {
+    await apiPost('/api/state', state);
+    showSaveStatus('✓ Saqlandi');
+  } catch (e) {
+    showSaveStatus('✗ Saqlanmadi: ' + e.message, true);
+  }
+}
+
+// ============ FOYDALI ============
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function dayDiff(fromStr) {
+  const [y,m,d] = fromStr.split("-").map(Number);
+  const from = new Date(y, m-1, d);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((today - from) / 86400000);
+}
+function fmtDate(str) {
+  const months = ["yanv","fev","mart","apr","may","iyun","iyul","avg","sen","okt","noy","dek"];
+  const [y,m,d] = str.split("-").map(Number);
+  return d + "-" + months[m-1] + " " + y;
+}
+function allDays() { return ROADMAP.flatMap(p => p.days.map(d => ({...d, phase: p.phase, icon: p.icon}))); }
+function taskId(day, idx) { return "d" + day + "t" + idx; }
+function dayDone(d) { return d.tasks.every((_, i) => state.done[taskId(d.day, i)]); }
+function dayDoneCount(d) { return d.tasks.filter((_, i) => state.done[taskId(d.day, i)]).length; }
+
+// ============ RENDER ============
+function render() {
+  const days = allDays();
+  const totalTasks = days.reduce((s,d) => s + d.tasks.length, 0);
+  const doneTasks = Object.keys(state.done).length;
+  const pct = totalTasks ? Math.round(doneTasks/totalTasks*100) : 0;
+
+  const elapsed = dayDiff(state.startDate);
+  const curDay = Math.min(Math.max(elapsed + 1, 1), 21);
+  const finished = elapsed + 1 > 21;
+
+  document.getElementById("pct").textContent = pct + "%";
+  document.getElementById("pctLabel").textContent = doneTasks + " / " + totalTasks + " vazifa bajarildi";
+  document.getElementById("overallBar").style.width = pct + "%";
+  document.getElementById("mDay").textContent = finished ? "Reja tugadi" : (curDay + "-kun");
+  const curPhase = ROADMAP.find(p => p.days.some(d => d.day === curDay));
+  document.getElementById("mPhase").textContent = curPhase ? curPhase.phase.split("—")[1].trim() : "—";
+  document.getElementById("mStart").textContent = fmtDate(state.startDate);
+  document.getElementById("mStreak").textContent = computeStreak(days, curDay) + " kun";
+
+  let html = "";
+
+  if (finished) {
+    html += '<div class="done-celebrate">🎉 21 kunlik reja yakunlandi! Saytingiz ishga tushdi. Tabriklaymiz!</div>';
+  } else {
+    const today = days.find(d => d.day === curDay);
+    html += '<div class="sec-title">Bugungi vazifalar</div>';
+    html += '<div class="today">';
+    html += '<div class="today-head"><span class="day-badge">' + curDay + '-KUN</span>';
+    html += '<span class="today-phase">' + curPhase.icon + ' ' + curPhase.phase + '</span></div>';
+    html += '<div class="today-title">' + today.title + '</div>';
+
+    if (curDay > 1) {
+      const y = days.find(d => d.day === curDay - 1);
+      const yd = dayDoneCount(y), yt = y.tasks.length;
+      if (yd === yt) {
+        html += '<div class="report ok"><span class="ic">✅</span><div><b>Kunlik hisobot:</b> '
+          + 'Kecha (' + y.day + '-kun) barcha ' + yt + ' vazifa bajarildi. Zo\'r ketyapsiz!</div></div>';
+      } else {
+        html += '<div class="report warn"><span class="ic">⚠️</span><div><b>Kunlik hisobot:</b> '
+          + 'Kecha (' + y.day + '-kun) ' + yt + ' vazifadan ' + yd + ' tasi bajarildi. '
+          + (yt-yd) + ' ta qoldi — quyida \"Orqada qolgan\" bo\'limidan yopib qo\'ying!</div></div>';
+      }
+    }
+    today.tasks.forEach((t, i) => {
+      const id = taskId(today.day, i);
+      html += taskRow(id, t, !!state.done[id]);
+    });
+    html += '</div>';
+  }
+
+  const overdue = [];
+  days.forEach(d => {
+    if (d.day < curDay) d.tasks.forEach((t, i) => {
+      const id = taskId(d.day, i);
+      if (!state.done[id]) overdue.push({ id, t, day: d.day });
+    });
+  });
+  if (overdue.length) {
+    html += '<div class="sec-title">Orqada qolgan vazifalar (' + overdue.length + ')</div>';
+    html += '<div class="overdue">';
+    html += '<div class="overdue-head">⏰ Bu vazifalar oldingi kunlardan qoldi — kechiktirmang!</div>';
+    overdue.forEach(o => {
+      html += taskRow(o.id, o.t + '<span class="od-day">(' + o.day + '-kun)</span>', false);
+    });
+    html += '</div>';
+  }
+
+  html += '<div class="sec-title">To\'liq 21 kunlik reja</div>';
+  ROADMAP.forEach(p => {
+    const pTotal = p.days.reduce((s,d) => s + d.tasks.length, 0);
+    const pDone = p.days.reduce((s,d) => s + dayDoneCount(d), 0);
+    html += '<div class="phase">';
+    html += '<div class="phase-head">' + p.icon + ' ' + p.phase
+      + '<span class="phase-prog">' + pDone + '/' + pTotal + '</span></div>';
+    p.days.forEach(d => {
+      const dc = dayDoneCount(d), dt = d.tasks.length;
+      const isDone = dc === dt;
+      const isToday = d.day === curDay && !finished;
+      html += '<div class="day' + (isToday ? " open is-today" : "") + (isDone ? " is-done" : "") + '" data-day="' + d.day + '">';
+      html += '<div class="day-head" onclick="toggleDay(' + d.day + ')">';
+      html += '<div class="day-num">' + (isDone ? "✓" : d.day) + '</div>';
+      html += '<div class="day-name">' + d.day + '-kun · ' + d.title + '</div>';
+      html += '<span class="day-count' + (isDone ? " full" : "") + '">' + dc + '/' + dt + '</span>';
+      html += '<span class="chevron">▶</span></div>';
+      html += '<div class="day-body">';
+      d.tasks.forEach((t, i) => {
+        const id = taskId(d.day, i);
+        html += taskRow(id, t, !!state.done[id]);
+      });
+      html += '</div></div>';
+    });
+    html += '</div>';
+  });
+
+  document.getElementById("app").innerHTML = html;
+}
+
+function taskRow(id, text, done) {
+  return '<div class="task' + (done ? " done" : "") + '" onclick="toggleTask(\'' + id + '\')">'
+    + '<div class="checkbox"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" '
+    + 'stroke="#06281d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">'
+    + '<polyline points="20 6 9 17 4 12"/></svg></div>'
+    + '<div class="task-text">' + text + '</div></div>';
+}
+
+function computeStreak(days, curDay) {
+  let streak = 0;
+  for (let d = curDay - 1; d >= 1; d--) {
+    const day = days.find(x => x.day === d);
+    if (day && dayDone(day)) streak++;
+    else break;
+  }
+  return streak;
+}
+
+// ============ HARAKATLAR ============
+window.toggleTask = async function(id) {
+  if (state.done[id]) delete state.done[id];
+  else state.done[id] = new Date().toISOString();
+  render();
+  await saveState();
+};
+window.toggleDay = function(dayNum) {
+  const el = document.querySelector('.day[data-day="' + dayNum + '"]');
+  if (el) el.classList.toggle("open");
+};
+document.getElementById("resetBtn").onclick = async function() {
+  if (confirm("Barcha belgilangan vazifalar va boshlanish sanasi tozalanadi. Davom etasizmi?")) {
+    state = { startDate: todayStr(), done: {} };
+    render();
+    await saveState();
+  }
+};
+document.getElementById("sendNowBtn").onclick = async function() {
+  if (!confirm("Hozir test email yuborilsinmi? (.env to'g'ri sozlangan bo'lishi kerak)")) return;
+  this.disabled = true;
+  this.textContent = "Yuborilmoqda...";
+  try {
+    const r = await apiPost('/api/send-now');
+    if (r.ok) {
+      showSaveStatus('✉️ Email yuborildi!');
+    } else {
+      showSaveStatus('✗ Yuborilmadi: ' + (r.error || 'noma\'lum xato'), true);
+    }
+  } catch (e) {
+    showSaveStatus('✗ Server xatosi: ' + e.message, true);
+  } finally {
+    this.disabled = false;
+    this.textContent = "Hozir email yuborish";
+  }
+};
+
+// ============ INIT ============
+(async function() {
+  try {
+    ROADMAP = await apiGet('/api/data');
+    state = await apiGet('/api/state');
+    render();
+  } catch (e) {
+    document.getElementById("app").innerHTML =
+      '<div class="loading" style="color:#f0686b">Server bilan aloqa yo\'q. tracker.js ishlayaptimi?</div>';
+  }
+})();
+</script>
+</body>
+</html>
