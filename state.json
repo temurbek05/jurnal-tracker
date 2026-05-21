@@ -28,17 +28,17 @@
       },
       "d2t0": {
         "done": true,
-        "value": 3287,
+        "value": 3288,
         "label": "Yaratilgan maqola"
       },
       "d2t1": {
         "done": true,
-        "value": 2,
+        "value": 4,
         "label": "Yuklangan fayl"
       },
       "d2t3": {
         "done": true,
-        "value": 3286,
+        "value": 3287,
         "label": "Submit qilingan maqola (DRAFT emas)"
       },
       "d3t2": {
@@ -82,6 +82,6 @@
         "label": "Tahririyat a'zolari kiritilgan"
       }
     },
-    "checkedAt": "2026-05-21T15:09:51.531Z"
+    "checkedAt": "2026-05-21T15:32:18.356Z"
   }
 }
