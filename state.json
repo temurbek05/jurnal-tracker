@@ -18,12 +18,12 @@
     "results": {
       "d1t0": {
         "done": true,
-        "value": 8,
+        "value": 9,
         "label": "Ro'yxatdan o'tgan foydalanuvchi (admin'dan tashqari)"
       },
       "d1t2": {
         "done": true,
-        "value": 7,
+        "value": 8,
         "label": "Email tasdiqlangan foydalanuvchi"
       },
       "d2t0": {
@@ -82,6 +82,6 @@
         "label": "Tahririyat a'zolari kiritilgan"
       }
     },
-    "checkedAt": "2026-05-21T14:02:17.544Z"
+    "checkedAt": "2026-05-21T14:32:17.778Z"
   }
 }
