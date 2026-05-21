@@ -1,4 +1,87 @@
 {
   "startDate": "2026-05-20",
-  "done": {}
+  "done": {
+    "d1t0": "2026-05-21T14:01:10.846Z",
+    "d1t2": "2026-05-21T14:01:10.846Z",
+    "d2t0": "2026-05-21T14:01:10.846Z",
+    "d2t1": "2026-05-21T14:01:10.846Z",
+    "d2t3": "2026-05-21T14:01:10.846Z",
+    "d3t2": "2026-05-21T14:01:10.846Z",
+    "d3t3": "2026-05-21T14:01:10.846Z",
+    "d4t1": "2026-05-21T14:01:10.846Z",
+    "d5t0": "2026-05-21T14:01:10.846Z",
+    "d5t3": "2026-05-21T14:01:10.846Z",
+    "d6t0": "2026-05-21T14:01:10.846Z",
+    "d6t1": "2026-05-21T14:01:10.846Z"
+  },
+  "verified": {
+    "results": {
+      "d1t0": {
+        "done": true,
+        "value": 8,
+        "label": "Ro'yxatdan o'tgan foydalanuvchi (admin'dan tashqari)"
+      },
+      "d1t2": {
+        "done": true,
+        "value": 7,
+        "label": "Email tasdiqlangan foydalanuvchi"
+      },
+      "d2t0": {
+        "done": true,
+        "value": 3287,
+        "label": "Yaratilgan maqola"
+      },
+      "d2t1": {
+        "done": true,
+        "value": 2,
+        "label": "Yuklangan fayl"
+      },
+      "d2t3": {
+        "done": true,
+        "value": 3286,
+        "label": "Submit qilingan maqola (DRAFT emas)"
+      },
+      "d3t2": {
+        "done": true,
+        "value": 1,
+        "label": "Taqrizchi taklifi yuborilgan"
+      },
+      "d3t3": {
+        "done": true,
+        "value": 3285,
+        "label": "Editor qarori berilgan maqola"
+      },
+      "d4t1": {
+        "done": true,
+        "value": 1,
+        "label": "To'ldirilgan taqriz"
+      },
+      "d5t0": {
+        "done": true,
+        "value": 1,
+        "label": "To'lov so'rovi yaratilgan"
+      },
+      "d5t3": {
+        "done": true,
+        "value": 3285,
+        "label": "IN_PRODUCTION yoki PUBLISHED maqola"
+      },
+      "d6t0": {
+        "done": true,
+        "value": 23,
+        "label": "Yaratilgan jurnal"
+      },
+      "d6t1": {
+        "done": true,
+        "value": 1,
+        "label": "APC tarif sozlangan"
+      },
+      "d13t1": {
+        "done": false,
+        "value": 0,
+        "label": "Tahririyat a'zolari kiritilgan"
+      }
+    },
+    "checkedAt": "2026-05-21T14:02:17.544Z"
+  }
 }
