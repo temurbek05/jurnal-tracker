@@ -20,8 +20,10 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const PORT = parseInt(process.env.PORT || '5555', 10);
 const SEND_HOUR = parseInt(process.env.SEND_HOUR || '21', 10);
 const SEND_NOW_MODE = process.argv.includes('--send-now');
+const VERIFY_MODE = process.argv.includes('--verify');
 const DISABLE_LOCAL_CRON = process.env.DISABLE_LOCAL_CRON === 'true';
 const AUTO_PUSH = process.env.AUTO_PUSH !== 'false';
+const VERIFY_INTERVAL_MIN = parseInt(process.env.VERIFY_INTERVAL_MIN || '30', 10);
 
 const HTML_FILE = path.join(__dirname, 'index.html');
 const DATA_FILE = path.join(__dirname, 'roadmap-data.json');
@@ -100,14 +102,91 @@ function getDayInfo(dayNum) {
   return null;
 }
 
+// --- Avtomatik DB tekshiruvi -----------------------------------------------
+// Bazada iz qoldiradigan vazifalarni haqiqatan tekshiradi (docker exec psql).
+// Sof qo'lda test vazifalari bu yerda yo'q — ular "qo'lda tasdiqlash" bo'lib qoladi.
+const CHECKS = {
+  'd1t0': { label: "Ro'yxatdan o'tgan foydalanuvchi (admin'dan tashqari)",
+    sql: "SELECT COUNT(*) FROM users WHERE email <> 'admin@journal.uz'", pass: n => n >= 1 },
+  'd1t2': { label: "Email tasdiqlangan foydalanuvchi",
+    sql: "SELECT COUNT(*) FROM users WHERE email_verified_at IS NOT NULL AND email <> 'admin@journal.uz'", pass: n => n >= 1 },
+  'd2t0': { label: "Yaratilgan maqola",
+    sql: "SELECT COUNT(*) FROM articles", pass: n => n >= 1 },
+  'd2t1': { label: "Yuklangan fayl",
+    sql: "SELECT COUNT(*) FROM article_files", pass: n => n >= 1 },
+  'd2t3': { label: "Submit qilingan maqola (DRAFT emas)",
+    sql: "SELECT COUNT(*) FROM articles WHERE status <> 'DRAFT'", pass: n => n >= 1 },
+  'd3t2': { label: "Taqrizchi taklifi yuborilgan",
+    sql: "SELECT COUNT(*) FROM review_invitations", pass: n => n >= 1 },
+  'd3t3': { label: "Editor qarori berilgan maqola",
+    sql: "SELECT COUNT(*) FROM articles WHERE status IN ('ACCEPTED','REJECTED','REVISION_REQUESTED','IN_PRODUCTION','PUBLISHED')", pass: n => n >= 1 },
+  'd4t1': { label: "To'ldirilgan taqriz",
+    sql: "SELECT COUNT(*) FROM article_reviews", pass: n => n >= 1 },
+  'd5t0': { label: "To'lov so'rovi yaratilgan",
+    sql: "SELECT COUNT(*) FROM payments", pass: n => n >= 1 },
+  'd5t3': { label: "IN_PRODUCTION yoki PUBLISHED maqola",
+    sql: "SELECT COUNT(*) FROM articles WHERE status IN ('IN_PRODUCTION','PUBLISHED')", pass: n => n >= 1 },
+  'd6t0': { label: "Yaratilgan jurnal",
+    sql: "SELECT COUNT(*) FROM journals", pass: n => n >= 1 },
+  'd6t1': { label: "APC tarif sozlangan",
+    sql: "SELECT COUNT(*) FROM apc_tariffs", pass: n => n >= 1 },
+  'd13t1': { label: "Tahririyat a'zolari kiritilgan",
+    sql: "SELECT COUNT(*) FROM editorial_board", pass: n => n >= 1 },
+};
+
+// Bazani tekshirib natijani qaytaradi. DB ulanmasa null (eski natija saqlanadi).
+function runVerification() {
+  const container = process.env.PG_CONTAINER || 'journal-postgres';
+  const pgUser = process.env.PG_USER || 'journal';
+  const pgDb = process.env.PG_DB || 'journal';
+  const results = {};
+  for (const [taskId, check] of Object.entries(CHECKS)) {
+    try {
+      const out = execSync(
+        `docker exec ${container} psql -U ${pgUser} -d ${pgDb} -t -A -c "${check.sql}"`,
+        { stdio: ['pipe', 'pipe', 'pipe'] }
+      ).toString().trim();
+      const n = parseInt(out, 10);
+      if (Number.isNaN(n)) throw new Error('DB javobi son emas: ' + out);
+      results[taskId] = { done: check.pass(n), value: n, label: check.label };
+    } catch (e) {
+      // DB yoki Docker ishlamayapti — tekshiruvni to'xtatamiz, eski natija qoladi
+      return null;
+    }
+  }
+  return results;
+}
+
+// Tekshiruvni ishga tushirib state'ni yangilaydi (passed vazifalarni avtomatik belgilaydi).
+function applyVerification() {
+  const results = runVerification();
+  if (!results) return { ok: false };
+  const state = loadState();
+  state.verified = { results, checkedAt: new Date().toISOString() };
+  let auto = 0;
+  for (const [taskId, r] of Object.entries(results)) {
+    if (r.done && !state.done[taskId]) {
+      state.done[taskId] = new Date().toISOString();
+      auto++;
+    }
+  }
+  saveState(state);
+  const passed = Object.values(results).filter(r => r.done).length;
+  console.log(`[verify] DB tekshirildi: ${passed}/${Object.keys(results).length} vazifa bajarilgan` +
+    (auto ? ` (${auto} tasi avtomatik belgilandi)` : ''));
+  return { ok: true, results };
+}
+
 // --- Email yuborish ---------------------------------------------------------
 function buildReport(state, dayNum) {
   const day = getDayInfo(dayNum);
   if (!day) return null;
-  const done = [], undone = [];
+  const done = [], dbFailed = [], manual = [];
   day.tasks.forEach((t, i) => {
-    if (state.done['d' + dayNum + 't' + i]) done.push(t);
-    else undone.push(t);
+    const id = 'd' + dayNum + 't' + i;
+    if (state.done[id]) { done.push(t); return; }
+    if (CHECKS[id]) dbFailed.push(t);   // tekshirilishi mumkin, lekin DB'da iz yo'q
+    else manual.push(t);                 // sof qo'lda test
   });
 
   // Orqada qolgan vazifalarni hisoblash
@@ -120,11 +199,12 @@ function buildReport(state, dayNum) {
     });
   }
 
-  return { day, done, undone, overdue };
+  const verifiedAt = state.verified && state.verified.checkedAt;
+  return { day, done, dbFailed, manual, undone: [...dbFailed, ...manual], overdue, verifiedAt };
 }
 
 function buildEmailHtml(report, dayNum) {
-  const { day, done, undone, overdue } = report;
+  const { day, done, dbFailed, manual, undone, overdue, verifiedAt } = report;
   const total = day.tasks.length;
   const pct = Math.round((done.length / total) * 100);
   const allDone = undone.length === 0;
@@ -133,6 +213,10 @@ function buildEmailHtml(report, dayNum) {
     : '⚠️ ' + undone.length + ' ta vazifa bajarilmadi';
 
   const listItems = (arr) => arr.map(t => '<li style="margin:6px 0;">' + escapeHtml(t) + '</li>').join('');
+
+  const verifiedNote = verifiedAt
+    ? 'Baza oxirgi marta tekshirildi: ' + new Date(verifiedAt).toLocaleString('uz-UZ', { dateStyle: 'short', timeStyle: 'short' })
+    : 'Baza tekshiruvi hali ishlamadi (Docker/DB o\'chiq bo\'lishi mumkin)';
 
   return `
     <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:600px;margin:0 auto;color:#222;padding:20px;">
@@ -150,23 +234,23 @@ function buildEmailHtml(report, dayNum) {
       <h3 style="color:#22a06b;margin-top:24px;font-size:16px;">✅ Bajarildi (${done.length})</h3>
       <ul style="line-height:1.5;padding-left:22px;">${listItems(done)}</ul>` : ''}
 
-      ${undone.length ? `
-      <h3 style="color:#e74c3c;margin-top:24px;font-size:16px;">❌ Bajarilmadi (${undone.length})</h3>
-      <ul style="line-height:1.5;padding-left:22px;">${listItems(undone)}</ul>
-      <p style="background:#fff3cd;padding:12px 14px;border-radius:8px;color:#7a5c00;font-size:13px;margin-top:14px;">
-        💡 Ertaga bularni "Orqada qolgan" bo'limida ko'rasiz — yopib qo'ying!
-      </p>` : ''}
+      ${dbFailed.length ? `
+      <h3 style="color:#e74c3c;margin-top:24px;font-size:16px;">❌ Bazada tekshirildi — bajarilmadi (${dbFailed.length})</h3>
+      <p style="color:#888;font-size:12px;margin:0 0 6px;">Bu vazifalar bazada iz qoldirishi kerak edi, lekin topilmadi:</p>
+      <ul style="line-height:1.5;padding-left:22px;">${listItems(dbFailed)}</ul>` : ''}
+
+      ${manual.length ? `
+      <h3 style="color:#c08a1e;margin-top:24px;font-size:16px;">✋ Qo'lda tasdiqlash kerak (${manual.length})</h3>
+      <p style="color:#888;font-size:12px;margin:0 0 6px;">Bularni avtomatik tekshirib bo'lmaydi — o'zingiz belgilang:</p>
+      <ul style="line-height:1.5;padding-left:22px;">${listItems(manual)}</ul>` : ''}
 
       ${overdue.length ? `
-      <h3 style="color:#888;margin-top:28px;font-size:14px;">⏰ Umumiy orqada qolgan: ${overdue.length} ta</h3>
-      <div style="background:#fafafa;padding:12px;border-radius:8px;color:#666;font-size:12px;">
-        Oldingi kunlardan bajarilmagan vazifalar mavjud. Tracker'da ko'ring:
-        <a href="http://localhost:${PORT}" style="color:#7c6cf0;">http://localhost:${PORT}</a>
-      </div>` : ''}
+      <h3 style="color:#888;margin-top:28px;font-size:14px;">⏰ Umumiy orqada qolgan: ${overdue.length} ta</h3>` : ''}
 
       <hr style="border:none;border-top:1px solid #eee;margin:28px 0 16px;">
       <p style="color:#888;font-size:11px;text-align:center;">
         JURNAL Roadmap Tracker · Avtomatik hisobot<br/>
+        🤖 ${verifiedNote}<br/>
         ${new Date().toLocaleString('uz-UZ', { dateStyle: 'full', timeStyle: 'short' })}
       </p>
     </div>
@@ -286,6 +370,14 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (parsed.pathname === '/api/verify' && req.method === 'POST') {
+      const r = applyVerification();
+      res.setHeader('Content-Type', 'application/json');
+      res.statusCode = r.ok ? 200 : 503;
+      res.end(JSON.stringify(r.ok ? { ok: true, results: r.results } : { ok: false, error: 'Baza ulanmadi (Docker/DB o\'chiq?)' }));
+      return;
+    }
+
     if (parsed.pathname === '/api/send-now' && req.method === 'POST') {
       try {
         const ok = await sendDailyEmail();
@@ -307,8 +399,13 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+// --- CLI mode: --verify (faqat bazani tekshiradi va chiqadi) ---------------
+if (VERIFY_MODE) {
+  const r = applyVerification();
+  process.exit(r.ok ? 0 : 1);
+}
 // --- CLI mode: --send-now (GitHub Actions ishlatadi) ----------------------
-if (SEND_NOW_MODE) {
+else if (SEND_NOW_MODE) {
   (async () => {
     try {
       const ok = await sendDailyEmail();
@@ -333,6 +430,7 @@ if (SEND_NOW_MODE) {
       console.log('  📨 Email manzil: ' + (process.env.REPORT_TO || process.env.GMAIL_USER || '(.env to\'ldirilmagan)'));
     }
     if (AUTO_PUSH) console.log('  🔄 Auto-sync:    state.json GitHub\'ga avtomatik push');
+    console.log('  🤖 DB tekshiruvi: har ' + VERIFY_INTERVAL_MIN + ' daqiqada');
     console.log('');
     console.log('  Yopish: Ctrl+C');
     console.log('');
@@ -342,4 +440,8 @@ if (SEND_NOW_MODE) {
     setInterval(tickScheduler, 5 * 60 * 1000);
     tickScheduler();
   }
+
+  // Davriy baza tekshiruvi — bajarilgan vazifalarni avtomatik aniqlaydi
+  setInterval(applyVerification, VERIFY_INTERVAL_MIN * 60 * 1000);
+  applyVerification();
 }
